@@ -2,9 +2,9 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 
-trait ISINK<TContractState> {
-    fn get_stream_id(self: @TContractState, from: ContractAddress, to: ContractAddress, amount_per_sec: u256) -> felt252;
-    fn _createStream(ref self: TContractState, to: ContractAddress, amount_per_sec: u256);
+trait SinkTrait<TContractState> {
+    fn get_stream_id(self: @TContractState, from: ContractAddress, to: ContractAddress, amount_per_sec: u256) -> u256;
+    // fn _createStream(ref self: TContractState, to: ContractAddress, amount_per_sec: u256);
     // fn create_stream_with_reason(ref self: TContractState, to: ContractAddress, amount_per_sec: u256, reason: felt252);
     // fn withdrawable(self: @TContractState, from: ContractAddress, to: ContractAddress, amount_per_sec: u256) -> (u256, u256, u256);
     // fn withdraw(ref self: TContractState, from: ContractAddress, to: ContractAddress, amount_per_sec: u256 );
@@ -24,6 +24,7 @@ mod Sink {
 
     use starknet::ContractAddress;
     use starknet::get_caller_address;
+    use CairoSink::erc20::ERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
 
     // struct Payer {
     //     las_payer_update: u64,
@@ -35,7 +36,7 @@ mod Sink {
         _stream_to_start: LegacyMap::<felt252, u256>,
         // _payers: LegacyMap::<ContractAddress, Payer>,
         _balances: LegacyMap::<ContractAddress, u256>,
-        // _decimals_divisor: u256,
+        _decimals_divisor: u256,
         token: ContractAddress
     }
 
@@ -127,35 +128,35 @@ mod Sink {
 
 
     #[constructor]
-    fn constructor(ref self: ContractState, token: ContractAddress, ) {
+    fn constructor(ref self: ContractState, token: ContractAddress) {
         self.token.write(token);
         let tokenDecimals: u8 = IERC20Dispatcher{contract_address: self.token.read()}.decimals();
         // self.DECIMALS_DIVISOR.write(10**(20 - tokenDecimals));
     }
 
     #[external(v0)]
-    impl SinkImpl of super::SinkTrait<ContractState> {
-        fn get_stream_id(self: @ContractState, payer: ContractAddress, receiver: ContractAddress, amount_per_sec: u256) -> ContractAddress {
-
+    impl Sink of super::SinkTrait<ContractState> {
+        fn get_stream_id(self: @ContractState, from: ContractAddress, to: ContractAddress, amount_per_sec: u256) -> u256 {
+            1_u256
         }
     }
 
-    /// @dev Internal Functions implementation for the Sink contract
-    #[generate_trait]
-    impl InternalFunctions of InternalFunctionsTrait {
-        /// @dev Creates a stream from an address to another address
-       fn _createStream(from: ContractAddress, to: ContractAddress) {
-            let streamId: u256 = self._get_stream_id(from, to);
-            assert(amountPerSec > 0_u256, 'amountPersec cant be 0');
-            assert(can_vote == true, 'USER_ALREADY_VOTED');
-        }
-    }
+    // /// @dev Internal Functions implementation for the Sink contract
+    // #[generate_trait]
+    // impl InternalFunctions of InternalFunctionsTrait {
+    //     /// @dev Creates a stream from an address to another address
+    //    fn _createStream(from: ContractAddress, to: ContractAddress) {
+    //         let streamId: u256 = self._get_stream_id(from, to);
+    //         assert(amountPerSec > 0_u256, 'amountPersec cant be 0');
+    //         assert(can_vote == true, 'USER_ALREADY_VOTED');
+    //     }
+    // }
 
-    /// @dev Asserts implementation for the Vote contract
-    #[generate_trait]
-    impl AssertsImpl of AssertsTrait {
-        // @dev Internal function that checks if an address is allowed to vote
-        fn _assert_(ref self: ContractState) {
-        }
-    }
+    // /// @dev Asserts implementation for the Vote contract
+    // #[generate_trait]
+    // impl AssertsImpl of AssertsTrait {
+    //     // @dev Internal function that checks if an address is allowed to vote
+    //     fn _assert_(ref self: ContractState) {
+    //     }
+    // }
 }

@@ -18,7 +18,7 @@ mod ERC20 {
 
     use starknet::ContractAddress;
     use starknet::get_caller_address;
-
+    
     #[storage]
     struct Storage {
         _name: felt252,
