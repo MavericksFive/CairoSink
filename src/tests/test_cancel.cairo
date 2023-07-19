@@ -49,7 +49,7 @@ fn it_should_cancel_stream() {
 
 #[test]
 #[available_gas(40000000)]
-#[should_panic]
+#[should_panic(expected: ('STREAM_NOT_EXIST','ENTRYPOINT_FAILED'))]
 fn it_should_not_cancel_stream_with_bad_id() {
     let (erc20_address, erc20_instance) = init_ERC20('Test', 'TEST', 18);
     let (stream_address, stream_instance) = init_Stream();
@@ -70,7 +70,7 @@ fn it_should_not_cancel_stream_with_bad_id() {
 
 #[test]
 #[available_gas(40000000)]
-#[should_panic]
+#[should_panic(expected: ('NOT_AUTHORIZED','ENTRYPOINT_FAILED'))]
 fn it_should_not_cancel_stream_if_not_owner_or_receiver() {
     let (erc20_address, erc20_instance) = init_ERC20('Test', 'TEST', 18);
     let (stream_address, stream_instance) = init_Stream();
