@@ -1,1 +1,1 @@
-mod Sink;
+mod sink;
