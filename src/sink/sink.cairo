@@ -77,6 +77,7 @@ mod Sink {
             assert(Sink::is_owner(self, id), 'Not owner');
         }
 
+<<<<<<< HEAD
         fn create_stream(
             ref self: ContractState,
             receiver: ContractAddress,
@@ -91,6 +92,11 @@ mod Sink {
             let stream_id = self.stream_counter.read() + 1;
             let start_time = get_block_timestamp();
             let owner = get_caller_address();
+=======
+        fn create_stream(ref self: ContractState, data: CreateStreamParams) -> felt252 {
+            let mut stream_id = self.stream_counter.read() + 1;
+            let start = get_block_timestamp();
+>>>>>>> 4d71b92 (fixed all merge issues)
             let stream_data = Stream {
                 amount: amount,
                 start_time,
