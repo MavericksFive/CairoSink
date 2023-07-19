@@ -24,6 +24,10 @@ fn RECEIVER() -> ContractAddress {
     contract_address_const::<20>()
 }
 
+#[cfg(test)]
+fn NOT_OWNER() -> ContractAddress {
+    contract_address_const::<14>()
+}
 
 #[cfg(test)]
 fn init_ERC20(name: felt252, symbol: felt252, decimals: u8) -> (ContractAddress, IERC20Dispatcher) {

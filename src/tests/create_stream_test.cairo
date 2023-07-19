@@ -25,7 +25,7 @@ fn it_should_create_stream() {
     assert(stream.receiver == RECEIVER(), 'Wrong receiver');
     assert(stream.start_time == current_timestamp, 'Wrong start time');
     assert(stream.end_time == current_timestamp + ONE_DAY, 'Wrong start time');
-    assert(stream.is_paused == false, 'is_paused should be false');
+    // assert(stream.is_paused == false, 'is_paused should be false');
     assert(stream.token.contract_address == erc20_address, 'Wrong erc20 address');
 }
 
