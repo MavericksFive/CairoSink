@@ -1,4 +1,3 @@
-use core::debug::PrintTrait;
 use starknet::ContractAddress;
 use CairoSink::erc20::ERC20::{IERC20, IERC20DispatcherTrait, IERC20Dispatcher};
 use traits::{TryInto, Into};
@@ -15,6 +14,14 @@ struct Stream {
     is_paused: bool
 }
 
+#[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
+struct CreateStreamParams {
+    amount: u256,
+    endTime: u64,
+    token: IERC20Dispatcher,
+    receiver: ContractAddress,
+}
+
 #[starknet::interface]
 trait ISink<TContractState> {
     fn create_stream(
@@ -28,7 +35,7 @@ trait ISink<TContractState> {
     fn pause_stream(ref self: TContractState, id: felt252);
     fn unpause_stream(ref self: TContractState, id: felt252);
     // fn withdraw(ref self: TContractState, id: felt252, amount: u256);
-    // fn get_id_counter(self: @TContractState) -> felt252;
+    fn get_id_counter(self: @TContractState) -> felt252;
     fn get_stream(self: @TContractState, id: felt252) -> Stream;
     fn get_time_when_stream_paused(self: @TContractState, id: felt252) -> u64;
     fn is_paused(self: @TContractState, id: felt252) -> bool;
@@ -41,7 +48,7 @@ mod Sink {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp, get_contract_address};
     use super::{Stream, IERC20DispatcherTrait, IERC20Dispatcher};
     use zeroable::{Zeroable};
-    use debug::PrintTrait;
+
     #[storage]
     struct Storage {
         stream_counter: felt252,
@@ -66,6 +73,21 @@ mod Sink {
         token: IERC20Dispatcher,
         amount: u256,
         end_time: u64,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        StreamCancelled: StreamCancelled, 
+    }
+    #[derive(Drop, starknet::Event)]
+    struct StreamCancelled {
+        #[key]
+        owner: ContractAddress,
+        #[key]
+        receiver: ContractAddress,
+        amount: u256,
+        stream_id: felt252
     }
 
     #[external(v0)]
