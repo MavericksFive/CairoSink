@@ -1,19 +1,28 @@
 use starknet::ContractAddress;
-use CairoSink::erc20::ERC20::IERC20;
+use CairoSink::erc20::ERC20::{IERC20, IERC20Dispatcher};
 
 
 #[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
 struct Stream {
     amount: u256,
-    end: felt252,
-    to: ContractAddress,
-    token: ContractAddress,
+    endTime: u64,
+    receiver: ContractAddress,
+    owner: ContractAddress,
+    token: IERC20Dispatcher,
     is_paused: bool
+}
+
+#[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
+struct CreateStreamParams {
+    amount: u256,
+    endTime: u64,
+    token: IERC20Dispatcher,
+    receiver: ContractAddress,
 }
 
 #[starknet::interface]
 trait ISink<TContractState> {
-    // fn create_stream(ref self: TContractState, stream: Stream) -> felt252;
+    fn create_stream(ref self: TContractState, data: CreateStreamParams) -> felt252;
     // fn cancel_stream(ref self: TContractState, id: felt252);
     // fn pause_stream(ref self: TContractState, id: felt252);
     // fn unpause_stream(ref self: TContractState, id: felt252);
@@ -24,8 +33,8 @@ trait ISink<TContractState> {
 
 #[starknet::contract]
 mod Sink {
-    use starknet::ContractAddress;
-    use super::Stream;
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use super::{Stream, CreateStreamParams};
 
     #[storage]
     struct Storage {
@@ -33,8 +42,25 @@ mod Sink {
         streams: LegacyMap::<felt252, Stream>
     }
 
+
     #[external(v0)]
     impl Sink of super::ISink<ContractState> {
+        fn create_stream(ref self: ContractState, data: CreateStreamParams) -> felt252 {
+            let stream_id = self.stream_counter.read() + 1;
+            let start = get_block_timestamp();
+            let stream_data = Stream {
+                amount: data.amount,
+                endTime: data.endTime,
+                receiver: data.receiver,
+                owner: get_caller_address(),
+                token: data.token,
+                is_paused: false
+            };
+            self.streams.write(stream_id, stream_data);
+            self.stream_counter.write(stream_id);
+            return stream_id;
+        }
+
         fn get_stream(self: @ContractState, id: felt252) -> Stream {
             return self.streams.read(id);
         }
