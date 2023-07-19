@@ -144,18 +144,28 @@ mod Sink {
 
         fn withdraw(ref self: ContractState, id: felt252, amount: u256) {
             self._only_receiver(id);
-            
             let mut stream = self._get_stream(id);
+            let caller = get_caller_address();
+
+            assert(caller == stream.owner || caller == stream.to, 'Anauthorized caller');
+
+            let mut transfer_amount: u256 = 0;
             let ray_withdrawable_amount = self._ray_withdrawable_amount(id);
 
-            assert(ray_withdrawable_amount > 0, 'No withdrawable amount');
+            if (caller == stream.receiver) {
+                assert(ray_withdrawable_amount >= amount * RAY, 'Withdraw amount too high');
 
-            stream.amount -= ray_withdrawable_amount;
-            stream.start_time = get_block_timestamp();
+                stream.amount -= ray_withdrawable_amount;
+                stream.start_time = get_block_timestamp();
+                transfer_amount = ray_withdrawable_amount / RAY;
+            } else {
+                transfer_amount = stream.amount - ray_withdrawable_amount / RAY;
+                assert(transfer_amount <= stream.amount, 'Wtihdraw amount too high');
+                stream.amount -= amount * RAY;
+            }
 
-            stream.token.transfer(stream.receiver,ray_withdrawable_amount / RAY);
-
-            self.emit(Event::Withdrawn(Withdrawn { user: get_caller_address(), amount: ray_withdrawable_amount / RAY }));
+            stream.token.transfer(stream.to, transfer_amount);
+            self.emit(Event::Withdrawn(Withdrawn { user: caller, amount: transfer_amount }));
         }
 
         fn get_stream(self: @ContractState, id: felt252) -> Stream {
@@ -255,7 +265,9 @@ mod Sink {
 
             let total_stream_time = stream.end_time - stream.start_time;
 
-            return RayMath::ray_div(RayMath::ray_mul(time_elpased.into(), stream.amount), total_stream_time.into());
+            return RayMath::ray_div(
+                RayMath::ray_mul(time_elpased.into(), stream.amount), total_stream_time.into()
+            );
         }
     }
 }

@@ -31,5 +31,4 @@ fn init_stream() -> (ContractAddress, ISinkDispatcher) {
 }
 
 #[cfg(test)]
-fn withdraw_receiver() {
-}
+fn withdraw_receiver() {}
