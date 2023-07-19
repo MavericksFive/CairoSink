@@ -46,7 +46,7 @@ mod Sink {
     #[external(v0)]
     impl Sink of super::ISink<ContractState> {
         fn create_stream(ref self: ContractState, data: CreateStreamParams) -> felt252 {
-            let stream_id = self.stream_counter.read() + 1;
+            let mut stream_id = self.stream_counter.read() + 1;
             let start = get_block_timestamp();
             let stream_data = Stream {
                 amount: data.amount,

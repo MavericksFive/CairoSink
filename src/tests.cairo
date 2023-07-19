@@ -1,6 +1,6 @@
 use starknet::{get_block_timestamp, deploy_syscall, contract_address_const, ContractAddress};
 use CairoSink::erc20::ERC20::{ERC20, IERC20DispatcherTrait, IERC20Dispatcher};
-use CairoSink::sink::sink::{Sink, Stream, ISinkDispatcher};
+use CairoSink::sink::sink::{Sink, Stream, ISinkDispatcherTrait, ISinkDispatcher};
 use array::ArrayTrait;
 use option::OptionTrait;
 use result::ResultTrait;
@@ -19,7 +19,7 @@ fn init_ERC20(name: felt252, symbol: felt252, decimals: u8) -> (ContractAddress,
 
     let class_hash = ERC20::TEST_CLASS_HASH.try_into().unwrap();
     let (contract_address, _) = deploy_syscall(class_hash, 0, calldata.span(), true).unwrap();
-    let contract_instance = IERC20Dispatcher { contract_address: contract_address }.name();
+    let contract_instance = IERC20Dispatcher { contract_address: contract_address };
     return (contract_address, contract_instance);
 }
 
@@ -29,6 +29,5 @@ fn init_Stream() -> (ContractAddress, ISinkDispatcher) {
     let class_hash = Sink::TEST_CLASS_HASH.try_into().unwrap();
     let (contract_address, _) = deploy_syscall(class_hash, 0, calldata.span(), true).unwrap();
     let contract_instance = ISinkDispatcher { contract_address: contract_address };
-
     return (contract_address, contract_instance);
 }
