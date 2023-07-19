@@ -43,7 +43,8 @@ mod Sink {
     #[storage]
     struct Storage {
         stream_counter: felt252,
-        streams: LegacyMap::<felt252, Stream>
+        streams: LegacyMap::<felt252, Stream>,
+        paused_streams: LegacyMap::<felt252, u64>
     }
 
     #[event]
@@ -77,7 +78,6 @@ mod Sink {
             assert(Sink::is_owner(self, id), 'Not owner');
         }
 
-<<<<<<< HEAD
         fn create_stream(
             ref self: ContractState,
             receiver: ContractAddress,
@@ -92,11 +92,6 @@ mod Sink {
             let stream_id = self.stream_counter.read() + 1;
             let start_time = get_block_timestamp();
             let owner = get_caller_address();
-=======
-        fn create_stream(ref self: ContractState, data: CreateStreamParams) -> felt252 {
-            let mut stream_id = self.stream_counter.read() + 1;
-            let start = get_block_timestamp();
->>>>>>> 4d71b92 (fixed all merge issues)
             let stream_data = Stream {
                 amount: amount,
                 start_time,
@@ -121,18 +116,15 @@ mod Sink {
 
         fn pause_stream(ref self: ContractState, id: felt252) {
             Sink::only_owner(@self, id);
-            assert(self.streams.read(id).is_paused == true, 'Stream is already paused');
-            let mut stream = self.streams.read(id);
-            stream.is_paused = true;
-            self.streams.write(id, stream);
+            assert(self.paused_streams.read(id) != 0, 'Stream is already paused');
+            let current_time = get_block_timestamp();
+            self.paused_streams.write(id, current_time);
         }
 
         fn unpause_stream(ref self: ContractState, id: felt252) {
             Sink::only_owner(@self, id);
-            assert(self.streams.read(id).is_paused == false, 'Stream is already unpaused');
-            let mut stream = self.streams.read(id);
-            stream.is_paused = false;
-            self.streams.write(id, stream);
+            assert(self.paused_streams.read(id) == 0, 'Stream is already unpaused');
+            self.paused_streams.write(id, 0_u64);
         }
     }
 }
