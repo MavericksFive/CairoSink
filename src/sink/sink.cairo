@@ -29,6 +29,8 @@ trait ISink<TContractState> {
     // fn withdraw(ref self: TContractState, id: felt252, amount: u256);
     // fn get_id_counter(self: @TContractState) -> felt252;
     fn get_stream(self: @TContractState, id: felt252) -> Stream;
+    fn get_time_when_stream_paused(self: @TContractState, id: felt252) -> u64;
+    fn is_paused(self: @TContractState, id: felt252) -> bool;
     fn is_owner(self: @TContractState, id: felt252) -> bool;
     fn only_owner(self: @TContractState, id: felt252);
 }
@@ -102,6 +104,7 @@ mod Sink {
                 is_paused: false
             };
             self.streams.write(stream_id, stream_data);
+            self.paused_streams.write(stream_id, 0_64);
             self.stream_counter.write(stream_id);
 
             token.transferFrom(get_caller_address(), get_contract_address(), amount);
@@ -114,16 +117,24 @@ mod Sink {
             return self.streams.read(id);
         }
 
+        fn get_time_when_stream_paused(self: @ContractState, id: felt252) -> u64 {
+            return self.paused_streams.read(id);
+        }
+
+        fn is_paused(self: @ContractState, id: felt252) -> bool {
+            return self.paused_streams.read(id) != 0_64;
+        }
+
         fn pause_stream(ref self: ContractState, id: felt252) {
             Sink::only_owner(@self, id);
-            assert(self.paused_streams.read(id) != 0, 'Stream is already paused');
+            assert(self.paused_streams.read(id) != 0_u64, 'Stream is already paused');
             let current_time = get_block_timestamp();
             self.paused_streams.write(id, current_time);
         }
 
         fn unpause_stream(ref self: ContractState, id: felt252) {
             Sink::only_owner(@self, id);
-            assert(self.paused_streams.read(id) == 0, 'Stream is already unpaused');
+            assert(self.paused_streams.read(id) == 0_64, 'Stream is already unpaused');
             self.paused_streams.write(id, 0_u64);
         }
     }
