@@ -25,6 +25,9 @@ mod helpers;
 mod pause_stream_test;
 
 #[cfg(test)]
+mod unpause_stream_test;
+
+#[cfg(test)]
 fn init_ERC20(name: felt252, symbol: felt252, decimals: u8) -> (ContractAddress, IERC20Dispatcher) {
     let mut calldata = ArrayTrait::new();
     calldata.append(name);

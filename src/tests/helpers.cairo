@@ -58,11 +58,15 @@ fn create_stream(
     end_time: u64,
     token: IERC20Dispatcher,
     caller: ContractAddress
-) -> felt252 {
+) -> (ContractAddress, ISinkDispatcher, felt252) {
     let (stream_address, stream_instance) = init_stream();
     token.mint(OWNER(), amount);
     token.approve(stream_address, amount);
     let current_timestamp = get_block_timestamp();
     set_contract_address(caller);
-    return stream_instance.create_stream(receiver, amount, end_time, token);
+    return (
+        stream_address,
+        stream_instance,
+        stream_instance.create_stream(receiver, amount, end_time, token)
+    );
 }

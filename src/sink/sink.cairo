@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+use CairoSink::sink::sink::ISink;
+use core::debug::PrintTrait;
+>>>>>>> dbd04fd (trying to fix errors with testing)
 use starknet::ContractAddress;
 use CairoSink::erc20::ERC20::{IERC20, IERC20DispatcherTrait, IERC20Dispatcher};
 use traits::{TryInto, Into};
@@ -104,7 +109,7 @@ mod Sink {
                 is_paused: false
             };
             self.streams.write(stream_id, stream_data);
-            self.paused_streams.write(stream_id, 0_64);
+            self.paused_streams.write(stream_id, 0_u64);
             self.stream_counter.write(stream_id);
 
             token.transferFrom(get_caller_address(), get_contract_address(), amount);
@@ -122,19 +127,19 @@ mod Sink {
         }
 
         fn is_paused(self: @ContractState, id: felt252) -> bool {
-            return self.paused_streams.read(id) != 0_64;
+            return self.paused_streams.read(id) != 0_u64;
         }
 
         fn pause_stream(ref self: ContractState, id: felt252) {
             Sink::only_owner(@self, id);
-            assert(self.paused_streams.read(id) != 0_u64, 'Stream is already paused');
+            assert(!Sink::is_paused(@self, id), 'Stream is already paused');
             let current_time = get_block_timestamp();
             self.paused_streams.write(id, current_time);
         }
 
         fn unpause_stream(ref self: ContractState, id: felt252) {
             Sink::only_owner(@self, id);
-            assert(self.paused_streams.read(id) == 0_64, 'Stream is already unpaused');
+            assert(Sink::is_paused(@self, id), 'Stream is already unpaused');
             self.paused_streams.write(id, 0_u64);
         }
     }
