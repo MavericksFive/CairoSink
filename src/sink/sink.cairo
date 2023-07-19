@@ -24,11 +24,13 @@ trait ISink<TContractState> {
         token: IERC20Dispatcher
     ) -> felt252;
     // fn cancel_stream(ref self: TContractState, id: felt252);
-    // fn pause_stream(ref self: TContractState, id: felt252);
-    // fn unpause_stream(ref self: TContractState, id: felt252);
+    fn pause_stream(ref self: TContractState, id: felt252);
+    fn unpause_stream(ref self: TContractState, id: felt252);
     // fn withdraw(ref self: TContractState, id: felt252, amount: u256);
     // fn get_id_counter(self: @TContractState) -> felt252;
     fn get_stream(self: @TContractState, id: felt252) -> Stream;
+    fn is_owner(self: @TContractState, id: felt252) -> bool;
+    fn only_owner(self: @TContractState, id: felt252);
 }
 
 #[starknet::contract]
@@ -64,6 +66,17 @@ mod Sink {
 
     #[external(v0)]
     impl Sink of super::ISink<ContractState> {
+        // Guard Functions
+        #[inline(always)]
+        fn is_owner(self: @ContractState, id: felt252) -> bool {
+            return self.streams.read(id).owner == get_caller_address();
+        }
+
+        #[inline(always)]
+        fn only_owner(self: @ContractState, id: felt252) {
+            assert(Sink::is_owner(self, id), 'Not owner');
+        }
+
         fn create_stream(
             ref self: ContractState,
             receiver: ContractAddress,
@@ -95,8 +108,25 @@ mod Sink {
             return stream_id;
         }
 
+
         fn get_stream(self: @ContractState, id: felt252) -> Stream {
             return self.streams.read(id);
+        }
+
+        fn pause_stream(ref self: ContractState, id: felt252) {
+            Sink::only_owner(@self, id);
+            assert(self.streams.read(id).is_paused == true, 'Stream is already paused');
+            let mut stream = self.streams.read(id);
+            stream.is_paused = true;
+            self.streams.write(id, stream);
+        }
+
+        fn unpause_stream(ref self: ContractState, id: felt252) {
+            Sink::only_owner(@self, id);
+            assert(self.streams.read(id).is_paused == false, 'Stream is already unpaused');
+            let mut stream = self.streams.read(id);
+            stream.is_paused = false;
+            self.streams.write(id, stream);
         }
     }
 }
