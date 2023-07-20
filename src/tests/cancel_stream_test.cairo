@@ -20,10 +20,7 @@ fn it_should_cancel_stream() {
 
     let stream = stream_instance.get_stream(stream_id);
 
-    assert(stream.receiver.is_zero(), 'no good');
-    assert(stream.owner.is_zero(), 'no good');
-    assert(stream.amount.is_zero(), 'no good');
-    assert(stream.end_time.is_zero(), 'no good');
+    assert(stream.is_cancelled == true, 'Should be cancelled');
 }
 
 #[test]
