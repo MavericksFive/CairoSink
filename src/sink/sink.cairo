@@ -34,6 +34,7 @@ trait ISink<TContractState> {
     fn cancel_stream(ref self: TContractState, id: felt252);
     fn pause_stream(ref self: TContractState, id: felt252);
     fn unpause_stream(ref self: TContractState, id: felt252);
+    fn get_id_counter(self: @TContractState) -> felt252;
     // fn withdraw(ref self: TContractState, id: felt252, amount: u256);
     fn get_streams_counter(self: @TContractState) -> felt252;
     fn get_stream(self: @TContractState, id: felt252) -> Stream;
@@ -188,7 +189,7 @@ mod Sink {
             assert(Sink::is_paused(@self, id), 'Stream is already unpaused');
             self.paused_streams.write(id, 0_u64);
         }
-        
+
         fn get_streams_counter(self: @ContractState) -> felt252 {
             return self.stream_counter.read();
         }
@@ -205,7 +206,6 @@ mod Sink {
             !self.streams.read(id).receiver.is_zero()
         }
 
-        fn _withdraw(ref self: ContractState, id: felt252) { //TODO
-        
+        fn _withdraw(ref self: ContractState, id: felt252) {}
     }
 }

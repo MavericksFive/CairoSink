@@ -13,8 +13,7 @@ use array::ArrayTrait;
 #[test]
 #[available_gas(40000000)]
 fn it_should_get_zero_when_no_stream_has_been_created() {
-    let (stream_address, stream_instance) = init_stream();
-
+    let stream_instance = init_stream();
     let streams_counter = stream_instance.get_streams_counter();
     assert(streams_counter == 0, 'Should be 0');
 }
@@ -22,8 +21,8 @@ fn it_should_get_zero_when_no_stream_has_been_created() {
 #[test]
 #[available_gas(40000000)]
 fn it_should_get_correct_streams_counter() {
-    let (erc20_address, erc20_instance) = init_ERC20('Test', 'TEST', 18);
-    let (stream_address, stream_instance) = init_stream();
+    let erc20_instance = init_ERC20('Test', 'TEST', 18);
+    let stream_instance = init_stream();
 
     let mut i: usize = 0;
     loop {
@@ -35,7 +34,7 @@ fn it_should_get_correct_streams_counter() {
 
         set_contract_address(OWNER());
         erc20_instance.mint(OWNER(), ONE_POW_18);
-        erc20_instance.approve(stream_address, ONE_POW_18);
+        erc20_instance.approve(stream_instance.contract_address, ONE_POW_18);
 
         let stream_id = stream_instance
             .create_stream(RECEIVER(), ONE_POW_18, current_timestamp + ONE_DAY, erc20_instance);
