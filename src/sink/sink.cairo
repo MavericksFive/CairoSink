@@ -156,6 +156,7 @@ mod Sink {
 
             if (caller == stream.receiver) {
                 assert(ray_withdrawable_amount >= amount * RAY, 'Withdraw amount too high');
+
                 stream.amount -= ray_withdrawable_amount;
                 stream.start_time = get_block_timestamp();
                 transfer_amount = ray_withdrawable_amount / RAY;
@@ -164,12 +165,12 @@ mod Sink {
                 transfer_amount = (stream.amount - ray_withdrawable_amount) / RAY;
 
                 assert(transfer_amount <= stream.amount, 'Wtihdraw amount too high');
+
                 stream.amount -= amount * RAY;
                 to = stream.owner;
             }
 
             self.streams.write(id, stream);
-
             stream.token.transfer(to, transfer_amount);
 
             self.emit(Event::Withdrawn(Withdrawn { user: caller, amount: transfer_amount }));

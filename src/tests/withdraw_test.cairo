@@ -54,3 +54,5 @@ fn withdraw_owner() {
     assert(owner_balance == AMOUNT / 2, 'Invalid user balance');
     assert(withdrawable_amount == (AMOUNT - AMOUNT / 2) / 2, 'Invalid withdrawable amount');
 }
+// TODO : Test withdraw with pause
+
