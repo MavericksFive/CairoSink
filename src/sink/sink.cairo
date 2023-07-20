@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-=======
-use CairoSink::sink::sink::ISink;
 use core::debug::PrintTrait;
->>>>>>> dbd04fd (trying to fix errors with testing)
 use starknet::ContractAddress;
 use CairoSink::erc20::ERC20::{IERC20, IERC20DispatcherTrait, IERC20Dispatcher};
 use traits::{TryInto, Into};
@@ -44,9 +40,8 @@ trait ISink<TContractState> {
 mod Sink {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp, get_contract_address};
     use super::{Stream, IERC20DispatcherTrait, IERC20Dispatcher};
-
     use zeroable::{Zeroable};
-
+    use debug::PrintTrait;
     #[storage]
     struct Storage {
         stream_counter: felt252,
@@ -62,6 +57,7 @@ mod Sink {
 
     #[derive(Drop, starknet::Event)]
     struct Created {
+        stream_id: felt252,
         #[key]
         owner: ContractAddress,
         #[key]
@@ -74,7 +70,6 @@ mod Sink {
 
     #[external(v0)]
     impl Sink of super::ISink<ContractState> {
-        // Guard Functions
         #[inline(always)]
         fn is_owner(self: @ContractState, id: felt252) -> bool {
             return self.streams.read(id).owner == get_caller_address();
@@ -113,7 +108,10 @@ mod Sink {
             self.stream_counter.write(stream_id);
 
             token.transferFrom(get_caller_address(), get_contract_address(), amount);
-            self.emit(Event::Created(Created { owner, receiver, token, amount, end_time }));
+            self
+                .emit(
+                    Event::Created(Created { stream_id, owner, receiver, token, amount, end_time })
+                );
             return stream_id;
         }
 
@@ -134,6 +132,7 @@ mod Sink {
             Sink::only_owner(@self, id);
             assert(!Sink::is_paused(@self, id), 'Stream is already paused');
             let current_time = get_block_timestamp();
+            current_time.print();
             self.paused_streams.write(id, current_time);
         }
 
