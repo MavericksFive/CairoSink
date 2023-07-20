@@ -1,4 +1,4 @@
-use starknet::{get_block_timestamp, deploy_syscall, contract_address_const};
+use starknet::{get_block_timestamp, contract_address_const};
 use starknet::testing::{set_contract_address, set_block_timestamp};
 use CairoSink::sink::sink::{ISink, ISinkDispatcherTrait, ISinkDispatcher};
 use CairoSink::erc20::ERC20::{ERC20, IERC20DispatcherTrait, IERC20Dispatcher};

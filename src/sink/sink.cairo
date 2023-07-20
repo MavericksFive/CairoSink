@@ -32,8 +32,6 @@ trait ISink<TContractState> {
     fn get_stream(self: @TContractState, id: felt252) -> Stream;
     fn get_time_when_stream_paused(self: @TContractState, id: felt252) -> u64;
     fn is_paused(self: @TContractState, id: felt252) -> bool;
-    fn is_owner(self: @TContractState, id: felt252) -> bool;
-    fn only_owner(self: @TContractState, id: felt252);
     fn get_withdrawable_amount(self: @TContractState, id: felt252) -> u256;
 }
 
@@ -48,7 +46,7 @@ mod Sink {
     use CairoSink::ray_math::ray_math::RAY;
     use zeroable::{Zeroable};
     use traits::Into;
-    use core::debug::PrintTrait;
+
 
     #[storage]
     struct Storage {
@@ -98,16 +96,6 @@ mod Sink {
 
     #[external(v0)]
     impl Sink of super::ISink<ContractState> {
-        #[inline(always)]
-        fn is_owner(self: @ContractState, id: felt252) -> bool {
-            return self.streams.read(id).owner == get_caller_address();
-        }
-
-        #[inline(always)]
-        fn only_owner(self: @ContractState, id: felt252) {
-            assert(Sink::is_owner(self, id), 'Not owner');
-        }
-
         fn create_stream(
             ref self: ContractState,
             receiver: ContractAddress,
@@ -123,7 +111,7 @@ mod Sink {
             let start_time = get_block_timestamp();
             let owner = get_caller_address();
             let stream_data = Stream {
-                amount: amount,
+                amount: amount * RAY,
                 start_time,
                 end_time: end_time,
                 receiver: receiver,
@@ -219,14 +207,14 @@ mod Sink {
         }
 
         fn pause_stream(ref self: ContractState, id: felt252) {
-            Sink::only_owner(@self, id);
+            self._only_owner(id);
             assert(!Sink::is_paused(@self, id), 'Stream is already paused');
             let current_time = get_block_timestamp();
             self.paused_streams.write(id, current_time);
         }
 
         fn unpause_stream(ref self: ContractState, id: felt252) {
-            Sink::only_owner(@self, id);
+            self._only_owner(id);
             assert(Sink::is_paused(@self, id), 'Stream is already unpaused');
             self.paused_streams.write(id, 0_u64);
         }

@@ -24,7 +24,7 @@ fn it_should_unpause_stream_if_owner() {
 
 #[test]
 #[available_gas(40000000)]
-#[should_panic(expected: ('Not owner', 'ENTRYPOINT_FAILED'))]
+#[should_panic(expected: ('Unauthorized caller', 'ENTRYPOINT_FAILED'))]
 fn it_should_not_unpause_stream_if_not_owner() {
     let erc20_instance = init_ERC20('Test', 'TEST', 18);
     let current_timestamp = get_block_timestamp();
