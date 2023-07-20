@@ -1,5 +1,6 @@
 use starknet::ContractAddress;
 
+
 #[starknet::interface]
 trait IERC20<TContractState> {
     fn name(self: @TContractState) -> felt252;
@@ -9,16 +10,18 @@ trait IERC20<TContractState> {
     fn balanceOf(self: @TContractState, account: ContractAddress) -> u256;
     fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn transfer(ref self: TContractState, to: ContractAddress, amount: u256) -> bool;
-    fn transferFrom(ref self: TContractState, from: ContractAddress, to: ContractAddress, amount: u256) -> bool;
+    fn transferFrom(
+        ref self: TContractState, from: ContractAddress, to: ContractAddress, amount: u256
+    ) -> bool;
     fn approve(ref self: TContractState, spender: ContractAddress, amount: u256) -> bool;
+    fn mint(ref self: TContractState, receiver: ContractAddress, amount: u256) -> bool;
 }
 
 #[starknet::contract]
 mod ERC20 {
-
     use starknet::ContractAddress;
-    use starknet::get_caller_address;
-    
+    use starknet::{get_caller_address, contract_address_const};
+
     #[storage]
     struct Storage {
         _name: felt252,
@@ -26,7 +29,7 @@ mod ERC20 {
         _decimals: u8,
         _total_supply: u256,
         _balances: LegacyMap::<ContractAddress, u256>,
-        _allowances: LegacyMap::<(ContractAddress, ContractAddress),u256>,
+        _allowances: LegacyMap::<(ContractAddress, ContractAddress), u256>,
         _allowlist: LegacyMap::<ContractAddress, felt252>
     }
 
@@ -77,8 +80,20 @@ mod ERC20 {
         fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
             self._balances.read(account)
         }
-        fn allowance(self: @ContractState, owner: ContractAddress, spender: ContractAddress) -> u256 {
+        fn allowance(
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+        ) -> u256 {
             self._allowances.read((owner, spender))
+        }
+        fn mint(ref self: ContractState, receiver: ContractAddress, amount: u256) -> bool {
+            let ZERO_ADDRESS: ContractAddress = contract_address_const::<0>();
+            self._total_supply.write(self._total_supply.read() + amount);
+            self._balances.write(receiver, self._balances.read(receiver) + amount);
+            self
+                .emit(
+                    Event::Transfer(Transfer { from: ZERO_ADDRESS, to: receiver, value: amount })
+                );
+            true
         }
         fn approve(ref self: ContractState, spender: ContractAddress, amount: u256) -> bool {
             let owner = get_caller_address();
@@ -96,7 +111,9 @@ mod ERC20 {
 
             true
         }
-        fn transferFrom(ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256) -> bool {
+        fn transferFrom(
+            ref self: ContractState, from: ContractAddress, to: ContractAddress, amount: u256
+        ) -> bool {
             let caller = get_caller_address();
             let allowed: u256 = self._allowances.read((from, caller));
 
@@ -106,7 +123,12 @@ mod ERC20 {
 
             if !is_max {
                 self._allowances.write((from, caller), allowed - amount);
-                self.emit(Event::Approval(Approval { owner: from, spender: caller, value: allowed - amount }));
+                self
+                    .emit(
+                        Event::Approval(
+                            Approval { owner: from, spender: caller, value: allowed - amount }
+                        )
+                    );
             }
 
             self._balances.write(from, self._balances.read(from) - amount);
