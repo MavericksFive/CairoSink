@@ -8,14 +8,8 @@ struct Stream {
     owner: ContractAddress,
     receiver: ContractAddress,
     amount: u256,
-<<<<<<< HEAD
     start_time: u64,
     end_time: u64,
-=======
-    start: u64,
-    end: u64,
-    receiver: ContractAddress,
->>>>>>> da839e8 (tests)
     token: IERC20Dispatcher,
     is_paused: bool
 }
@@ -23,8 +17,6 @@ struct Stream {
 
 #[starknet::interface]
 trait ISink<TContractState> {
-<<<<<<< HEAD
-
     fn create_stream(
         ref self: TContractState,
         receiver: ContractAddress,
@@ -35,12 +27,6 @@ trait ISink<TContractState> {
     fn cancel_stream(ref self: TContractState, id: felt252);
     fn pause_stream(ref self: TContractState, id: felt252);
     fn unpause_stream(ref self: TContractState, id: felt252);
-=======
-    fn create_stream(ref self: TContractState, amount: u256, end: u64, token: IERC20Dispatcher, receiver: ContractAddress) -> felt252;
-    // fn cancel_stream(ref self: TContractState, id: felt252);
-    // fn pause_stream(ref self: TContractState, id: felt252);
-    // fn unpause_stream(ref self: TContractState, id: felt252);
->>>>>>> da839e8 (tests)
     fn withdraw(ref self: TContractState, id: felt252, amount: u256);
     fn get_id_counter(self: @TContractState) -> felt252;
     fn get_stream(self: @TContractState, id: felt252) -> Stream;
@@ -53,18 +39,16 @@ trait ISink<TContractState> {
 
 #[starknet::contract]
 mod Sink {
-    use starknet::{ContractAddress, get_caller_address, get_block_timestamp, get_contract_address};
-<<<<<<< HEAD
+    use starknet::{
+        ContractAddress, get_caller_address, get_block_timestamp, get_contract_address,
+        contract_address_const
+    };
     use super::{Stream, IERC20DispatcherTrait, IERC20Dispatcher};
-=======
-    use super::{Stream, IERC20Dispatcher, IERC20DispatcherTrait};
->>>>>>> da839e8 (tests)
     use CairoSink::ray_math::ray_math::RayMath;
     use CairoSink::ray_math::ray_math::RAY;
     use zeroable::{Zeroable};
     use traits::Into;
     use core::debug::PrintTrait;
-    use zeroable::Zeroable;
 
     #[storage]
     struct Storage {
@@ -102,8 +86,7 @@ mod Sink {
         #[key]
         receiver: ContractAddress,
         amount: u256,
-        stream_id: felt252
-        Withdrawn: Withdrawn, 
+        stream_id: felt252,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -115,7 +98,6 @@ mod Sink {
 
     #[external(v0)]
     impl Sink of super::ISink<ContractState> {
-<<<<<<< HEAD
         #[inline(always)]
         fn is_owner(self: @ContractState, id: felt252) -> bool {
             return self.streams.read(id).owner == get_caller_address();
@@ -134,15 +116,10 @@ mod Sink {
             token: IERC20Dispatcher
         ) -> felt252 {
             assert(end_time > get_block_timestamp(), 'End time must be in the future');
-=======
-        fn create_stream(ref self: ContractState, amount: u256, end: u64, token: IERC20Dispatcher, receiver: ContractAddress) -> felt252 {
-            assert(end > get_block_timestamp(), 'End time must be in the future');
->>>>>>> da839e8 (tests)
             assert(receiver.is_non_zero(), 'Receiver cannot be zero');
             assert(amount.is_non_zero(), 'Amount cannot be zero');
 
             let stream_id = self.stream_counter.read() + 1;
-<<<<<<< HEAD
             let start_time = get_block_timestamp();
             let owner = get_caller_address();
             let stream_data = Stream {
@@ -167,53 +144,34 @@ mod Sink {
         }
 
 
-=======
-            let start = get_block_timestamp();
-            let owner = get_caller_address();
-
-            let stream_data = Stream {
-                amount: amount * RAY,
-                start,
-                end,
-                receiver,
-                owner: get_caller_address(),
-                token,
-            };
-
-            self.streams.write(stream_id, stream_data);
-            self.stream_counter.write(stream_id);
-
-            token.transferFrom(stream_data.owner, get_contract_address(), amount);
-
-            return stream_id;
-        }
-
->>>>>>> da839e8 (tests)
         fn withdraw(ref self: ContractState, id: felt252, amount: u256) {
-            self._only_receiver(id);
             let mut stream = self._get_stream(id);
             let caller = get_caller_address();
 
-            assert(caller == stream.owner || caller == stream.receiver, 'Anauthorized caller');
+            assert(caller == stream.owner || caller == stream.receiver, 'Unauthorized caller');
 
             let mut transfer_amount: u256 = 0;
             let ray_withdrawable_amount = self._ray_withdrawable_amount(id);
+            let mut to: ContractAddress = contract_address_const::<0>();
 
             if (caller == stream.receiver) {
                 assert(ray_withdrawable_amount >= amount * RAY, 'Withdraw amount too high');
-
                 stream.amount -= ray_withdrawable_amount;
                 stream.start_time = get_block_timestamp();
                 transfer_amount = ray_withdrawable_amount / RAY;
+                to = stream.receiver;
             } else {
-                transfer_amount = stream.amount - ray_withdrawable_amount / RAY;
+                transfer_amount = (stream.amount - ray_withdrawable_amount) / RAY;
+
                 assert(transfer_amount <= stream.amount, 'Wtihdraw amount too high');
                 stream.amount -= amount * RAY;
+                to = stream.owner;
             }
 
-            transfer_amount.print();
+            self.streams.write(id, stream);
 
-            stream.token.transfer(stream.receiver, transfer_amount);
+            stream.token.transfer(to, transfer_amount);
+
             self.emit(Event::Withdrawn(Withdrawn { user: caller, amount: transfer_amount }));
         }
 
@@ -270,6 +228,8 @@ mod Sink {
             Sink::only_owner(@self, id);
             assert(Sink::is_paused(@self, id), 'Stream is already unpaused');
             self.paused_streams.write(id, 0_u64);
+        }
+
         fn get_withdrawable_amount(self: @ContractState, id: felt252) -> u256 {
             return self._ray_withdrawable_amount(id) / RAY;
         }
@@ -286,9 +246,6 @@ mod Sink {
             !self.streams.read(id).receiver.is_zero()
         }
 
-        fn _withdraw(ref self: ContractState, id: felt252) { //TODO
-            return self.streams.read(id);
-        }
 
         fn _only_owner(self: @ContractState, id: felt252) {
             assert(get_caller_address() == self.streams.read(id).owner, 'Unauthorized caller');

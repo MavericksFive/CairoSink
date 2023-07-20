@@ -5,6 +5,10 @@ use CairoSink::sink::sink::{Sink, Stream, ISinkDispatcherTrait, ISinkDispatcher}
 use array::ArrayTrait;
 use option::OptionTrait;
 use result::ResultTrait;
+<<<<<<< HEAD
+=======
+use array::ArrayTrait;
+>>>>>>> bd79b1d (test withdraw owner)
 use traits::{TryInto, Into};
 
 const NAME: felt252 = 'MockToken';
@@ -64,7 +68,13 @@ fn create_stream(
 ) -> (ISinkDispatcher, felt252) {
     let stream_instance = init_stream();
     token.mint(caller, amount);
+<<<<<<< HEAD
     set_contract_address(caller);
     token.approve(stream_instance.contract_address, amount);
     return (stream_instance, stream_instance.create_stream(receiver, amount, end_time, token));
+=======
+    token.approve(stream_address, amount);
+    let current_timestamp = get_block_timestamp();
+    return (stream_instance, stream_instance.create_stream(amount, end, token, receiver));
+>>>>>>> bd79b1d (test withdraw owner)
 }
