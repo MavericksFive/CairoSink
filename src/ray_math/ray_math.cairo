@@ -8,11 +8,10 @@ trait IRayMath {
 
 impl RayMath of IRayMath {
     fn ray_mul(a: u256, b: u256) -> u256 {
-        let half_b = b / 2;
-        return (half_b + (a * RAY)) / b;
+        return (a * b + HALF_RAY) / RAY;
     }
 
     fn ray_div(a: u256, b: u256) -> u256 {
-        return (HALF_RAY + a * RAY) / RAY;
+        (a * RAY + b / 2) / b
     }
 }
