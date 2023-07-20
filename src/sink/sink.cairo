@@ -44,6 +44,24 @@ mod Sink {
         streams: LegacyMap::<felt252, Stream>
     }
 
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        Created: Created
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct Created {
+        #[key]
+        owner: ContractAddress,
+        #[key]
+        receiver: ContractAddress,
+        #[key]
+        token: IERC20Dispatcher,
+        amount: u256,
+        end_time: u64,
+    }
+
     #[external(v0)]
     impl Sink of super::ISink<ContractState> {
         fn create_stream(
@@ -56,8 +74,6 @@ mod Sink {
             assert(end_time > get_block_timestamp(), 'End time must be in the future');
             assert(receiver.is_non_zero(), 'Receiver cannot be zero');
             assert(amount.is_non_zero(), 'Amount cannot be zero');
-
-            token.transferFrom(get_caller_address(), get_contract_address(), amount);
 
             let stream_id = self.stream_counter.read() + 1;
             let start_time = get_block_timestamp();
@@ -73,6 +89,9 @@ mod Sink {
             };
             self.streams.write(stream_id, stream_data);
             self.stream_counter.write(stream_id);
+
+            token.transferFrom(get_caller_address(), get_contract_address(), amount);
+            self.emit(Event::Created(Created { owner, receiver, token, amount, end_time }));
             return stream_id;
         }
 
