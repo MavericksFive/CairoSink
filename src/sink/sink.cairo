@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use CairoSink::erc20::ERC20::{IERC20, IERC20DispatcherTrait, IERC20Dispatcher};
+use CairoSink::erc20::ERC20::{IERC20DispatcherTrait, IERC20Dispatcher};
 use traits::{TryInto, Into};
 
 
@@ -35,7 +35,7 @@ trait ISink<TContractState> {
     fn pause_stream(ref self: TContractState, id: felt252);
     fn unpause_stream(ref self: TContractState, id: felt252);
     // fn withdraw(ref self: TContractState, id: felt252, amount: u256);
-    fn get_id_counter(self: @TContractState) -> felt252;
+    fn get_streams_counter(self: @TContractState) -> felt252;
     fn get_stream(self: @TContractState, id: felt252) -> Stream;
     fn get_time_when_stream_paused(self: @TContractState, id: felt252) -> u64;
     fn is_paused(self: @TContractState, id: felt252) -> bool;
@@ -188,6 +188,10 @@ mod Sink {
             assert(Sink::is_paused(@self, id), 'Stream is already unpaused');
             self.paused_streams.write(id, 0_u64);
         }
+        
+        fn get_streams_counter(self: @ContractState) -> felt252 {
+            return self.stream_counter.read();
+        }
     }
 
     #[generate_trait]
@@ -202,6 +206,6 @@ mod Sink {
         }
 
         fn _withdraw(ref self: ContractState, id: felt252) { //TODO
-        }
+        
     }
 }
