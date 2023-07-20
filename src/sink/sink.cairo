@@ -31,7 +31,7 @@ trait ISink<TContractState> {
         end_time: u64,
         token: IERC20Dispatcher
     ) -> felt252;
-    // fn cancel_stream(ref self: TContractState, id: felt252);
+    fn cancel_stream(ref self: TContractState, id: felt252);
     fn pause_stream(ref self: TContractState, id: felt252);
     fn unpause_stream(ref self: TContractState, id: felt252);
     // fn withdraw(ref self: TContractState, id: felt252, amount: u256);
@@ -140,6 +140,20 @@ mod Sink {
 
         fn get_stream(self: @ContractState, id: felt252) -> Stream {
             return self.streams.read(id);
+        }
+
+        fn cancel_stream(ref self: ContractState, id: felt252) {
+            let mut stream = self._get_stream(id);
+            let caller = get_caller_address();
+            assert((caller == stream.owner) | (caller == stream.receiver), 'NOT_AUTHORIZED');
+
+            //InternalFunctions::_withdraw(ref self, id);
+            stream.receiver = Zeroable::zero();
+            stream.owner = Zeroable::zero();
+            stream.amount = Zeroable::zero();
+            stream.endTime = Zeroable::zero();
+
+            self.streams.write(id, stream);
         }
 
         fn get_time_when_stream_paused(self: @ContractState, id: felt252) -> u64 {
