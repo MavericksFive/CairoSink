@@ -1,4 +1,3 @@
-use core::debug::PrintTrait;
 use starknet::ContractAddress;
 use CairoSink::erc20::ERC20::{IERC20, IERC20DispatcherTrait, IERC20Dispatcher};
 use traits::{TryInto, Into};
@@ -15,6 +14,14 @@ struct Stream {
     is_paused: bool
 }
 
+#[derive(Copy, Drop, Serde, storage_access::StorageAccess)]
+struct CreateStreamParams {
+    amount: u256,
+    endTime: u64,
+    token: IERC20Dispatcher,
+    receiver: ContractAddress,
+}
+
 #[starknet::interface]
 trait ISink<TContractState> {
     fn create_stream(
@@ -24,11 +31,11 @@ trait ISink<TContractState> {
         end_time: u64,
         token: IERC20Dispatcher
     ) -> felt252;
-    // fn cancel_stream(ref self: TContractState, id: felt252);
+    fn cancel_stream(ref self: TContractState, id: felt252);
     fn pause_stream(ref self: TContractState, id: felt252);
     fn unpause_stream(ref self: TContractState, id: felt252);
     // fn withdraw(ref self: TContractState, id: felt252, amount: u256);
-    // fn get_id_counter(self: @TContractState) -> felt252;
+    fn get_id_counter(self: @TContractState) -> felt252;
     fn get_stream(self: @TContractState, id: felt252) -> Stream;
     fn get_time_when_stream_paused(self: @TContractState, id: felt252) -> u64;
     fn is_paused(self: @TContractState, id: felt252) -> bool;
@@ -41,7 +48,7 @@ mod Sink {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp, get_contract_address};
     use super::{Stream, IERC20DispatcherTrait, IERC20Dispatcher};
     use zeroable::{Zeroable};
-    use debug::PrintTrait;
+
     #[storage]
     struct Storage {
         stream_counter: felt252,
@@ -52,7 +59,8 @@ mod Sink {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        Created: Created
+        Created: Created,
+        Cancelled: Cancelled,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -66,6 +74,16 @@ mod Sink {
         token: IERC20Dispatcher,
         amount: u256,
         end_time: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct Cancelled {
+        #[key]
+        owner: ContractAddress,
+        #[key]
+        receiver: ContractAddress,
+        amount: u256,
+        stream_id: felt252
     }
 
     #[external(v0)]
@@ -120,6 +138,36 @@ mod Sink {
             return self.streams.read(id);
         }
 
+        fn cancel_stream(ref self: ContractState, id: felt252) {
+            let mut stream = self._get_stream(id);
+            let caller = get_caller_address();
+            assert((caller == stream.owner) | (caller == stream.receiver), 'NOT_AUTHORIZED');
+
+            //InternalFunctions::_withdraw(ref self, id);
+            stream.receiver = Zeroable::zero();
+            stream.owner = Zeroable::zero();
+            stream.amount = Zeroable::zero();
+            stream.end_time = Zeroable::zero();
+
+            self.streams.write(id, stream);
+
+            self
+                .emit(
+                    Event::Cancelled(
+                        Cancelled {
+                            owner: stream.owner,
+                            receiver: stream.receiver,
+                            amount: stream.amount,
+                            stream_id: id
+                        }
+                    )
+                );
+        }
+
+        fn get_id_counter(self: @ContractState) -> felt252 {
+            self.stream_counter.read()
+        }
+
         fn get_time_when_stream_paused(self: @ContractState, id: felt252) -> u64 {
             return self.paused_streams.read(id);
         }
@@ -132,7 +180,6 @@ mod Sink {
             Sink::only_owner(@self, id);
             assert(!Sink::is_paused(@self, id), 'Stream is already paused');
             let current_time = get_block_timestamp();
-            current_time.print();
             self.paused_streams.write(id, current_time);
         }
 
@@ -140,6 +187,21 @@ mod Sink {
             Sink::only_owner(@self, id);
             assert(Sink::is_paused(@self, id), 'Stream is already unpaused');
             self.paused_streams.write(id, 0_u64);
+        }
+    }
+
+    #[generate_trait]
+    impl InternalFunctions of InternalFunctionsTrait {
+        fn _get_stream(self: @ContractState, id: felt252) -> Stream {
+            assert(InternalFunctions::_exists(self, id), 'STREAM_NOT_EXIST');
+            self.streams.read(id)
+        }
+
+        fn _exists(self: @ContractState, id: felt252) -> bool {
+            !self.streams.read(id).receiver.is_zero()
+        }
+
+        fn _withdraw(ref self: ContractState, id: felt252) { //TODO
         }
     }
 }

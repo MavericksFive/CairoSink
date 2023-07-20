@@ -4,11 +4,11 @@ use CairoSink::sink::sink::{ISink, ISinkDispatcherTrait, ISinkDispatcher};
 use CairoSink::erc20::ERC20::{IERC20DispatcherTrait, IERC20Dispatcher};
 use super::helpers::{init_ERC20, init_stream, create_stream, OWNER, RECEIVER, NOT_OWNER};
 use CairoSink::constants::{ONE_POW_18, ONE_DAY, ONE_WEEK};
-
+use zeroable::Zeroable;
 
 #[test]
 #[available_gas(40000000)]
-fn it_should_pause_stream_if_owner() {
+fn it_should_cancel_stream() {
     let erc20_instance = init_ERC20('Test', 'TEST', 18);
     let current_timestamp = get_block_timestamp();
     set_block_timestamp(current_timestamp + ONE_DAY);
@@ -16,15 +16,33 @@ fn it_should_pause_stream_if_owner() {
         RECEIVER(), ONE_POW_18, current_timestamp + ONE_WEEK, erc20_instance, OWNER()
     );
 
-    stream_instance.pause_stream(stream_id);
+    stream_instance.cancel_stream(stream_id);
 
-    assert(stream_instance.is_paused(stream_id), 'Stream should be paused');
+    let stream = stream_instance.get_stream(stream_id);
+
+    assert(stream.receiver.is_zero(), 'no good');
+    assert(stream.owner.is_zero(), 'no good');
+    assert(stream.amount.is_zero(), 'no good');
+    assert(stream.end_time.is_zero(), 'no good');
+}
+#[test]
+#[available_gas(40000000)]
+#[should_panic(expected: ('STREAM_NOT_EXIST', 'ENTRYPOINT_FAILED'))]
+fn it_should_not_cancel_stream_with_bad_id() {
+    let erc20_instance = init_ERC20('Test', 'TEST', 18);
+    let current_timestamp = get_block_timestamp();
+    set_block_timestamp(current_timestamp + ONE_DAY);
+    let (stream_instance, stream_id) = create_stream(
+        RECEIVER(), ONE_POW_18, current_timestamp + ONE_WEEK, erc20_instance, OWNER()
+    );
+
+    stream_instance.cancel_stream(stream_id + 1);
 }
 
 #[test]
 #[available_gas(40000000)]
-#[should_panic(expected: ('Not owner', 'ENTRYPOINT_FAILED'))]
-fn it_should_not_pause_stream_if__not_owner() {
+#[should_panic(expected: ('NOT_AUTHORIZED', 'ENTRYPOINT_FAILED'))]
+fn it_should_not_cancel_stream_if_not_owner_or_receiver() {
     let erc20_instance = init_ERC20('Test', 'TEST', 18);
     let current_timestamp = get_block_timestamp();
     set_block_timestamp(current_timestamp + ONE_DAY);
@@ -33,7 +51,6 @@ fn it_should_not_pause_stream_if__not_owner() {
     );
 
     set_contract_address(NOT_OWNER());
-
-    stream_instance.pause_stream(stream_id);
+    stream_instance.cancel_stream(stream_id);
 }
 
