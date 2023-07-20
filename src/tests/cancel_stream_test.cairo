@@ -25,6 +25,7 @@ fn it_should_cancel_stream() {
     assert(stream.amount.is_zero(), 'no good');
     assert(stream.end_time.is_zero(), 'no good');
 }
+
 #[test]
 #[available_gas(40000000)]
 #[should_panic(expected: ('STREAM_NOT_EXIST', 'ENTRYPOINT_FAILED'))]

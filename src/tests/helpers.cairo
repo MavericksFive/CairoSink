@@ -7,6 +7,10 @@ use option::OptionTrait;
 use result::ResultTrait;
 use traits::{TryInto, Into};
 
+const NAME: felt252 = 'MockToken';
+const SYMBOL: felt252 = 'MTK';
+const AMOUNT: u256 = 10000000000000000000;
+const END: u64 = 31449600;
 
 #[cfg(test)]
 fn ZERO_ADDRESS() -> ContractAddress {

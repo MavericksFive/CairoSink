@@ -9,4 +9,6 @@ mod unpause_stream_test;
 #[cfg(test)]
 mod cancel_stream_test;
 #[cfg(test)]
+mod withdraw_test;
+#[cfg(test)]
 mod get_streams_counter_test;
