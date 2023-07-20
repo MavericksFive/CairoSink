@@ -3,7 +3,7 @@ use starknet::testing::{set_contract_address, set_block_timestamp};
 use CairoSink::sink::sink::{ISink, ISinkDispatcherTrait, ISinkDispatcher};
 use CairoSink::erc20::ERC20::{IERC20, ERC20, IERC20DispatcherTrait, IERC20Dispatcher};
 use CairoSink::constants::{ONE_POW_18, ONE_DAY};
-use super::{init_ERC20, init_stream, create_stream, OWNER, RECEIVER, ZERO_ADDRESS};
+use super::helpers::{init_ERC20, init_stream, create_stream, OWNER, RECEIVER, ZERO_ADDRESS};
 
 #[test]
 #[available_gas(40000000)]
