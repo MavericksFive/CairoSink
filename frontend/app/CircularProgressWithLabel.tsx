@@ -8,7 +8,7 @@ import Box from '@mui/material/Box';
 export function CircularProgressWithLabel(
   props: CircularProgressProps & { value: number },
 ) {
-  const totalStream = 80;
+  const totalStream = 1000;
   return (
     <Box sx={{ position: 'relative', display: 'inline-flex' }}>
       <CircularProgress variant="determinate" {...props} />
@@ -28,7 +28,7 @@ export function CircularProgressWithLabel(
           variant="h4"
           component="div"
           color="text.primary"
-        >{`${props.value*totalStream/100}/${totalStream} SINK`}</Typography>
+        >{`${Math.round(props.value*totalStream/100)}/${totalStream} SINK`}</Typography>
       </Box>
     </Box>
   );

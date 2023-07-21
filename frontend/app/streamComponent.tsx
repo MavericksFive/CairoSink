@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { CircularProgressWithLabel } from './CircularProgressWithLabel';
 
 
-export function ProgressBar() {
-  const [value, setValue] = useState(0);
+export function ProgressBar({startingValue, periodicAmount}: {startingValue: number, periodicAmount: number}) {
+  const [value, setValue] = useState(startingValue);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -14,7 +14,7 @@ export function ProgressBar() {
           clearInterval(interval);
           return oldValue;
         } else {
-          return oldValue + 1;
+          return oldValue + periodicAmount;
         }
       });
     }, 200); // Update every second
